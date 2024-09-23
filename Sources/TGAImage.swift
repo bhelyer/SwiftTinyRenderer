@@ -30,6 +30,59 @@ private struct TGAHeader {
         data.append(Data(bytes: &bitsperpixel, count: MemoryLayout<UInt8>.stride))
         data.append(Data(bytes: &imagedescriptor, count: MemoryLayout<UInt8>.stride))
     }
+
+    mutating func read(from data: Data) -> Int {
+        var bytesRead = 0
+        withUnsafeMutablePointer(to: &idlength) {
+            let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
+            bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt8>.stride)
+        }
+        withUnsafeMutablePointer(to: &colormaptype) {
+            let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
+            bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt8>.stride)
+        }
+        withUnsafeMutablePointer(to: &datatypecode) {
+            let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
+            bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt8>.stride)
+        }
+        withUnsafeMutablePointer(to: &colormaporigin) {
+            let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
+            bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt16>.stride)
+        }
+        withUnsafeMutablePointer(to: &colormaplength) {
+            let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
+            bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt16>.stride)
+        }
+        withUnsafeMutablePointer(to: &colormapdepth) {
+            let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
+            bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt8>.stride)
+        }
+        withUnsafeMutablePointer(to: &xOrigin) {
+            let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
+            bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt16>.stride)
+        }
+        withUnsafeMutablePointer(to: &yOrigin) {
+            let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
+            bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt16>.stride)
+        }
+        withUnsafeMutablePointer(to: &width) {
+            let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
+            bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt16>.stride)
+        }
+        withUnsafeMutablePointer(to: &height) {
+            let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
+            bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt16>.stride)
+        }
+        withUnsafeMutablePointer(to: &bitsperpixel) {
+            let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
+            bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt8>.stride)
+        }
+        withUnsafeMutablePointer(to: &imagedescriptor) {
+            let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
+            bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt8>.stride)
+        }
+        return bytesRead
+    }
 }
 
 public struct TGAColor {
@@ -48,6 +101,18 @@ public struct TGAColor {
         self.b = b
         self.a = a
         self.bpp = bpp
+    }
+
+    mutating func read(from data: Data, at i: Int, bpp: UInt8) -> Bool {
+        if i + Int(bpp) >= data.count {
+            return false
+        }
+        if bpp >= 1 { b = data[i    ] }
+        if bpp >= 2 { g = data[i + 1] }
+        if bpp >= 3 { r = data[i + 2] }
+        if bpp >= 4 { a = data[i + 3] }
+        self.bpp = bpp
+        return true
     }
 }
 
@@ -73,8 +138,45 @@ public struct TGAImage {
         self.bpp = format.rawValue
     }
 
-    public func read(fromFile filename: String) -> Bool {
-        print("read(fromFile: \(filename))")
+    public mutating func read(fromFile filename: String) -> Bool {
+        guard let data = FileManager.default.contents(atPath: filename) else {
+            print("Failed to read file \(filename)")
+            return false
+        }
+        var header = TGAHeader()
+        let bytesRead = header.read(from: data)
+        if bytesRead == 0 {
+            print("Failed to read image header.")
+            return false
+        }
+        width = Int(header.width)
+        height = Int(header.height)
+        bpp = header.bitsperpixel >> 3
+        if width <= 0 || height <= 0 || (bpp != Format.grayscale.rawValue && bpp != Format.rgb.rawValue && bpp != Format.rgba.rawValue) {
+            print("Invalid image header.")
+            return false
+        }
+        let nbytes = width * height * Int(bpp)
+        bytes = [UInt8](repeating: 0, count: nbytes)
+        if header.datatypecode == 3 || header.datatypecode == 2 {
+            data.copyBytes(to: &bytes, from: bytesRead..<nbytes)
+            return true
+        } else if header.datatypecode == 11 || header.datatypecode == 10 {
+            if !loadRleData(from: data, at: bytesRead) {
+                print("Failed to read RLE data.")
+                return false
+            }
+        } else {
+            print("Unknown file format: \(Int(header.datatypecode))")
+            return false
+        }
+        if (header.imagedescriptor & 0x20) == 0 {
+            flipVertically()
+        }
+        if (header.imagedescriptor & 0x10) != 0 {
+            flipHorizontally()
+        }
+        print("\(width)x\(height)/\(bpp * 8)")
         return true
     }
 
@@ -171,8 +273,55 @@ public struct TGAImage {
         return true
     }
 
-    private mutating func loadRleData(_ data: Data) -> Bool {
-        return false
+    private mutating func loadRleData(from data: Data, at start: Int) -> Bool {
+        let pixelcount = width * height
+        var currentpixel = 0
+        var currentbyte = 0
+        var colorbuffer = TGAColor()
+        var i = start
+        repeat {
+            var chunkheader = UInt8()
+            if i >= data.count { return false }
+            chunkheader = data[i]
+            i += 1
+            if chunkheader < 128 {
+                chunkheader += 1
+                for _ in 0..<chunkheader {
+                    if !colorbuffer.read(from: data, at: i, bpp: bpp) {
+                        return false
+                    }
+                    i += Int(bpp)
+                    if bpp >= 1 { bytes[currentbyte    ] = colorbuffer.b }
+                    if bpp >= 2 { bytes[currentbyte + 1] = colorbuffer.g }
+                    if bpp >= 3 { bytes[currentbyte + 2] = colorbuffer.r }
+                    if bpp >= 4 { bytes[currentbyte + 3] = colorbuffer.a }
+                    currentbyte += Int(bpp)
+                    currentpixel += 1
+                    if currentpixel > pixelcount {
+                        print("Read too many pixels.")
+                        return false
+                    }
+                }
+            } else {
+                chunkheader -= 127
+                if !colorbuffer.read(from: data, at: i, bpp: bpp) {
+                    return false
+                }
+                i += Int(bpp)
+                for _ in 0..<chunkheader {
+                    if bpp >= 1 { bytes[currentbyte    ] = colorbuffer.b }
+                    if bpp >= 2 { bytes[currentbyte + 1] = colorbuffer.g }
+                    if bpp >= 3 { bytes[currentbyte + 2] = colorbuffer.r }
+                    if bpp >= 4 { bytes[currentbyte + 3] = colorbuffer.a }
+                    currentbyte += Int(bpp)
+                    currentpixel += 1
+                    if currentpixel > pixelcount {
+                        print("Read too many pixels.")
+                    }
+                }
+            }
+        } while currentpixel < pixelcount
+        return true
     }
 
     private func writeRleData(_ data: inout Data) -> Bool {
