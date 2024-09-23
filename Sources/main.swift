@@ -26,17 +26,22 @@ func line(_ x0: Int, _ y0: Int, _ x1: Int, _ y1: Int, _ image: inout TGAImage, _
         swap(&y0, &y1)
     }
 
-    let denom = Real(x1 - x0)
-    let ry0 = Real(y0)
-    let ry1 = Real(y1)
+    let dx = x1 - x0
+    let dy = y1 - y0
+    let derror = abs(dy) * 2
+    var error = 0
+    var y = y0
     for x in x0..<x1 {
-        let t = Real(x - x0) / denom
-        let y = ry0 * (1.0 - t) + ry1 * t
         if !steep {
-            image.set(x: x, y: Int(y), to: colour)
+            image.set(x: x, y: y, to: colour)
         } else {
-            // If transposed, de-transpose it.
-            image.set(x: Int(y), y: x, to: colour)
+            // De-transpose it.
+            image.set(x: y, y: x, to: colour)
+        }
+        error += derror
+        if error > dx {
+            y += y1 > y0 ? 1 : -1
+            error -= dx * 2
         }
     }
 }
