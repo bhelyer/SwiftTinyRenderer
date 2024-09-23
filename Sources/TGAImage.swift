@@ -86,10 +86,39 @@ private struct TGAHeader {
 }
 
 public struct TGAColour {
-    public var b = UInt8(0)
-    public var g = UInt8(0)
-    public var r = UInt8(0)
-    public var a = UInt8(0)
+    public var bgra: [UInt8] = [0, 0, 0, 0]
+    public var b: UInt8 {
+        get {
+            return bgra[0]
+        }
+        set(newValue) {
+            bgra[0] = newValue
+        }
+    }
+    public var g: UInt8 {
+        get {
+            return bgra[1]
+        }
+        set(newValue) {
+            bgra[1] = newValue
+        }
+    }
+    public var r: UInt8 {
+        get {
+            return bgra[2]
+        }
+        set(newValue) {
+            bgra[2] = newValue
+        }
+    }
+    public var a: UInt8 {
+        get {
+            return bgra[3]
+        }
+        set(newValue) {
+            bgra[3] = newValue
+        }
+    }
     public var bpp = UInt8(4)
 
     public init() {
@@ -107,10 +136,9 @@ public struct TGAColour {
         if i + Int(bpp) >= data.count {
             return false
         }
-        if bpp >= 1 { b = data[i    ] }
-        if bpp >= 2 { g = data[i + 1] }
-        if bpp >= 3 { r = data[i + 2] }
-        if bpp >= 4 { a = data[i + 3] }
+        for j in 0..<Int(bpp) {
+            bgra[j] = data[i + j]
+        }
         self.bpp = bpp
         return true
     }
@@ -254,22 +282,21 @@ public struct TGAImage {
         }
         var colour = TGAColour(r: 0, g: 0, b: 0, a: 0, bpp: bpp)
         let i = (x + y * width) * Int(bpp)
-        if bpp >= 1 { colour.b = bytes[i    ] }
-        if bpp >= 2 { colour.g = bytes[i + 1] }
-        if bpp >= 3 { colour.r = bytes[i + 2] }
-        if bpp >= 4 { colour.a = bytes[i + 3] }
+        for j in 0..<Int(bpp) {
+            colour.bgra[j] = bytes[i + j]
+        }
         return colour
     }
 
+    @discardableResult
     public mutating func set(x: Int, y: Int, to colour: TGAColour) -> Bool {
         if bytes.count == 0 || x < 0 || y < 0 || x >= width || y >= width {
             return false
         }
         let i = (x + y * width) * Int(bpp)
-        if bpp >= 1 { bytes[i    ] = colour.b }
-        if bpp >= 2 { bytes[i + 1] = colour.g }
-        if bpp >= 3 { bytes[i + 2] = colour.r }
-        if bpp >= 4 { bytes[i + 3] = colour.a }
+        for j in 0..<Int(bpp) {
+            bytes[i + j] = colour.bgra[j]
+        }
         return true
     }
 
