@@ -2,11 +2,11 @@ import Foundation
 
 private struct TGAHeader {
     var idlength = UInt8(0)
-    var colormaptype = UInt8(0)
+    var colourmaptype = UInt8(0)
     var datatypecode = UInt8(0)
-    var colormaporigin = UInt16(0)
-    var colormaplength = UInt16(0)
-    var colormapdepth = UInt8(0)
+    var colourmaporigin = UInt16(0)
+    var colourmaplength = UInt16(0)
+    var colourmapdepth = UInt8(0)
     var xOrigin = UInt16(0)
     var yOrigin = UInt16(0)
     var width = UInt16(0)
@@ -18,11 +18,11 @@ private struct TGAHeader {
         // Sadly, Swift can't pack structs natively.
         // It's this, or define the header in C.
         data.append(Data(bytes: &idlength, count: MemoryLayout<UInt8>.stride))
-        data.append(Data(bytes: &colormaptype, count: MemoryLayout<UInt8>.stride))
+        data.append(Data(bytes: &colourmaptype, count: MemoryLayout<UInt8>.stride))
         data.append(Data(bytes: &datatypecode, count: MemoryLayout<UInt8>.stride))
-        data.append(Data(bytes: &colormaporigin, count: MemoryLayout<UInt16>.stride))
-        data.append(Data(bytes: &colormaplength, count: MemoryLayout<UInt16>.stride))
-        data.append(Data(bytes: &colormapdepth, count: MemoryLayout<UInt8>.stride))
+        data.append(Data(bytes: &colourmaporigin, count: MemoryLayout<UInt16>.stride))
+        data.append(Data(bytes: &colourmaplength, count: MemoryLayout<UInt16>.stride))
+        data.append(Data(bytes: &colourmapdepth, count: MemoryLayout<UInt8>.stride))
         data.append(Data(bytes: &xOrigin, count: MemoryLayout<UInt16>.stride))
         data.append(Data(bytes: &yOrigin, count: MemoryLayout<UInt16>.stride))
         data.append(Data(bytes: &width, count: MemoryLayout<UInt16>.stride))
@@ -37,7 +37,7 @@ private struct TGAHeader {
             let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
             bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt8>.stride)
         }
-        withUnsafeMutablePointer(to: &colormaptype) {
+        withUnsafeMutablePointer(to: &colourmaptype) {
             let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
             bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt8>.stride)
         }
@@ -45,15 +45,15 @@ private struct TGAHeader {
             let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
             bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt8>.stride)
         }
-        withUnsafeMutablePointer(to: &colormaporigin) {
+        withUnsafeMutablePointer(to: &colourmaporigin) {
             let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
             bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt16>.stride)
         }
-        withUnsafeMutablePointer(to: &colormaplength) {
+        withUnsafeMutablePointer(to: &colourmaplength) {
             let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
             bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt16>.stride)
         }
-        withUnsafeMutablePointer(to: &colormapdepth) {
+        withUnsafeMutablePointer(to: &colourmapdepth) {
             let buffer = UnsafeMutableBufferPointer(start: $0, count: 1)
             bytesRead += data.copyBytes(to: buffer, from: bytesRead..<bytesRead+MemoryLayout<UInt8>.stride)
         }
@@ -85,7 +85,7 @@ private struct TGAHeader {
     }
 }
 
-public struct TGAColor {
+public struct TGAColour {
     public var b = UInt8(0)
     public var g = UInt8(0)
     public var r = UInt8(0)
@@ -248,28 +248,28 @@ public struct TGAImage {
         }
     }
 
-    public func get(x: Int, y: Int) -> TGAColor {
+    public func get(x: Int, y: Int) -> TGAColour {
         if bytes.count == 0 || x < 0 || y < 0 || x >= width || y >= width {
-            return TGAColor()
+            return TGAColour()
         }
-        var color = TGAColor(r: 0, g: 0, b: 0, a: 0, bpp: bpp)
+        var colour = TGAColour(r: 0, g: 0, b: 0, a: 0, bpp: bpp)
         let i = (x + y * width) * Int(bpp)
-        if bpp >= 1 { color.b = bytes[i    ] }
-        if bpp >= 2 { color.g = bytes[i + 1] }
-        if bpp >= 3 { color.r = bytes[i + 2] }
-        if bpp >= 4 { color.a = bytes[i + 3] }
-        return color
+        if bpp >= 1 { colour.b = bytes[i    ] }
+        if bpp >= 2 { colour.g = bytes[i + 1] }
+        if bpp >= 3 { colour.r = bytes[i + 2] }
+        if bpp >= 4 { colour.a = bytes[i + 3] }
+        return colour
     }
 
-    public mutating func set(x: Int, y: Int, to color: TGAColor) -> Bool {
+    public mutating func set(x: Int, y: Int, to colour: TGAColour) -> Bool {
         if bytes.count == 0 || x < 0 || y < 0 || x >= width || y >= width {
             return false
         }
         let i = (x + y * width) * Int(bpp)
-        if bpp >= 1 { bytes[i    ] = color.b }
-        if bpp >= 2 { bytes[i + 1] = color.g }
-        if bpp >= 3 { bytes[i + 2] = color.r }
-        if bpp >= 4 { bytes[i + 3] = color.a }
+        if bpp >= 1 { bytes[i    ] = colour.b }
+        if bpp >= 2 { bytes[i + 1] = colour.g }
+        if bpp >= 3 { bytes[i + 2] = colour.r }
+        if bpp >= 4 { bytes[i + 3] = colour.a }
         return true
     }
 
@@ -277,7 +277,7 @@ public struct TGAImage {
         let pixelcount = width * height
         var currentpixel = 0
         var currentbyte = 0
-        var colorbuffer = TGAColor()
+        var colourbuffer = TGAColour()
         var i = start
         repeat {
             var chunkheader = UInt8()
@@ -287,14 +287,14 @@ public struct TGAImage {
             if chunkheader < 128 {
                 chunkheader += 1
                 for _ in 0..<chunkheader {
-                    if !colorbuffer.read(from: data, at: i, bpp: bpp) {
+                    if !colourbuffer.read(from: data, at: i, bpp: bpp) {
                         return false
                     }
                     i += Int(bpp)
-                    if bpp >= 1 { bytes[currentbyte    ] = colorbuffer.b }
-                    if bpp >= 2 { bytes[currentbyte + 1] = colorbuffer.g }
-                    if bpp >= 3 { bytes[currentbyte + 2] = colorbuffer.r }
-                    if bpp >= 4 { bytes[currentbyte + 3] = colorbuffer.a }
+                    if bpp >= 1 { bytes[currentbyte    ] = colourbuffer.b }
+                    if bpp >= 2 { bytes[currentbyte + 1] = colourbuffer.g }
+                    if bpp >= 3 { bytes[currentbyte + 2] = colourbuffer.r }
+                    if bpp >= 4 { bytes[currentbyte + 3] = colourbuffer.a }
                     currentbyte += Int(bpp)
                     currentpixel += 1
                     if currentpixel > pixelcount {
@@ -304,15 +304,15 @@ public struct TGAImage {
                 }
             } else {
                 chunkheader -= 127
-                if !colorbuffer.read(from: data, at: i, bpp: bpp) {
+                if !colourbuffer.read(from: data, at: i, bpp: bpp) {
                     return false
                 }
                 i += Int(bpp)
                 for _ in 0..<chunkheader {
-                    if bpp >= 1 { bytes[currentbyte    ] = colorbuffer.b }
-                    if bpp >= 2 { bytes[currentbyte + 1] = colorbuffer.g }
-                    if bpp >= 3 { bytes[currentbyte + 2] = colorbuffer.r }
-                    if bpp >= 4 { bytes[currentbyte + 3] = colorbuffer.a }
+                    if bpp >= 1 { bytes[currentbyte    ] = colourbuffer.b }
+                    if bpp >= 2 { bytes[currentbyte + 1] = colourbuffer.g }
+                    if bpp >= 3 { bytes[currentbyte + 2] = colourbuffer.r }
+                    if bpp >= 4 { bytes[currentbyte + 3] = colourbuffer.a }
                     currentbyte += Int(bpp)
                     currentpixel += 1
                     if currentpixel > pixelcount {
