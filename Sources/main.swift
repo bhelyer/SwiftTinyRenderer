@@ -4,7 +4,7 @@ let red = TGAColour(r: 255, g: 0, b: 0, a: 255)
 var image = TGAImage(width: 100, height: 100, format: .rgb)
 
 /// The floating point type used.
-typealias Real = Double
+
 
 func line(_ x0: Int, _ y0: Int, _ x1: Int, _ y1: Int, _ image: inout TGAImage, _ colour: TGAColour) {
     // Create mutable copies of arguments, so we can swap them about.
@@ -46,13 +46,26 @@ func line(_ x0: Int, _ y0: Int, _ x1: Int, _ y1: Int, _ image: inout TGAImage, _
     }
 }
 
-for _ in 0...1000000 {
-    line(13, 20, 80, 40, &image, white)
-    line(20, 13, 40, 80, &image, red)
-    line(80, 40, 13, 20, &image, red)
-}
+line(13, 20, 80, 40, &image, white)
+line(20, 13, 40, 80, &image, red)
+line(80, 40, 13, 20, &image, red)
 
 image.flipVertically() // Move origin to bottom left corner.
 if !image.write(fileTo: "output.tga", vflip: false, rle: true) {
     print("Failed to write image.")
 }
+
+let v = Vec2r(x: 1.0, y: 3.0)
+print("hello \(v + Vec2r(x: 0.5, y: -0.3))")
+let v2 = Vec2i(x: 3, y: 4)
+print("hello \(v2 * 0.5)")
+
+let v3 = Vec3r(x: 1.0, y: 2.0, z: 3.0)
+var v4 = Vec3r(x: 2.0, y: 3.0, z: 4.0)
+print("v4.len = \(v4.length) \(v4)")
+v4.normalise(toLength: 2.0)
+print("v4.len = \(v4.length) \(v4)")
+var v5 = Vec3i(x: 2, y: 3, z: 4)
+print("v5.len = \(v5.length) \(v5)")
+v5.normalise(toLength: 2.0)
+print("v5.len = \(v5.length) \(v5)")
