@@ -172,7 +172,7 @@ public struct Vec3<T : Number> : CustomStringConvertible {
     }
 }
 
-typealias Vec2r = Vec2<Real>
-typealias Vec2i = Vec2<Int>
-typealias Vec3r = Vec3<Real>
-typealias Vec3i = Vec3<Int>
+public typealias Vec2r = Vec2<Real>
+public typealias Vec2i = Vec2<Int>
+public typealias Vec3r = Vec3<Real>
+public typealias Vec3i = Vec3<Int>
