@@ -54,6 +54,27 @@ public struct Vec2<T : Number> : CustomStringConvertible {
         set(newValue) { rawY = newValue }
     }
 
+    public subscript(componentIndex: Int) -> T {
+        get {
+            assert(componentIndex == 0 || componentIndex == 1, "Vec2: bad index")
+            if componentIndex == 0 {
+                return rawX
+            } else if componentIndex == 1 {
+                return rawY
+            } else {
+                return T(0)
+            }
+        }
+        set(newValue) {
+            assert(componentIndex == 0 || componentIndex == 1, "Vec2: bad index")
+            if componentIndex == 0 {
+                rawX = newValue
+            } else if componentIndex == 1 {
+                rawY = newValue
+            }
+        }
+    }
+
     public init() {
     }
 
@@ -112,6 +133,31 @@ public struct Vec3<T : Number> : CustomStringConvertible {
     public var inorm: T {
         get { return rawZ }
         set(newValue) { rawZ = newValue }
+    }
+
+    public subscript(componentIndex: Int) -> T {
+        get {
+            assert(componentIndex >= 0 && componentIndex <= 2, "Vec3: bad index")
+            if componentIndex == 0 {
+                return rawX
+            } else if componentIndex == 1 {
+                return rawY
+            } else if componentIndex == 2 {
+                return rawZ
+            } else {
+                return T(0)
+            }
+        }
+        set(newValue) {
+            assert(componentIndex >= 0 && componentIndex <= 2, "Vec3: bad index")
+            if componentIndex == 0 {
+                rawX = newValue
+            } else if componentIndex == 1 {
+                rawY = newValue
+            } else if componentIndex == 2 {
+                rawZ = newValue
+            }
+        }
     }
 
     public init() {
