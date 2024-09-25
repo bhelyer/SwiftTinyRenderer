@@ -10,9 +10,9 @@ var tImage = TGAImage(width: 200, height: 200, format: .rgb)
 let t0 = [Vec2i(x: 10, y: 70), Vec2i(x: 50, y: 160), Vec2i(x: 70, y: 80)]
 let t1 = [Vec2i(x: 180, y: 50), Vec2(x: 150, y: 1), Vec2i(x: 70, y: 180)]
 let t2 = [Vec2i(x: 180, y: 150), Vec2i(x: 120, y: 160), Vec2i(x: 130, y: 180)]
-triangle(t0[0], t0[1], t0[2], &tImage, red)
-triangle(t1[0], t1[1], t1[2], &tImage, white)
-triangle(t2[0], t2[1], t2[2], &tImage, green)
+triangle(t0, &tImage, red)
+triangle(t1, &tImage, white)
+triangle(t2, &tImage, green)
 tImage.flipVertically() // Move origin to bottom left corner.
 if !tImage.write(fileTo: "triangles.tga", vflip: false, rle: true) {
     print("Failed to write image.")
@@ -72,7 +72,7 @@ func line(_ a: Vec2i, _ b: Vec2i, _ image: inout TGAImage, _ colour: TGAColour) 
 }
 
 @MainActor
-func triangle(_ v0: Vec2i, _ v1: Vec2i, _ v2: Vec2i, _ image: inout TGAImage, _ colour: TGAColour) {
+func simpleTriangle(_ v0: Vec2i, _ v1: Vec2i, _ v2: Vec2i, _ image: inout TGAImage, _ colour: TGAColour) {
     // Discard degenerate triangles.
     if v0.y == v1.y && v0.y == v2.y { return }
 
@@ -128,6 +128,54 @@ func triangle(_ v0: Vec2i, _ v1: Vec2i, _ v2: Vec2i, _ image: inout TGAImage, _ 
             // Note that due to casting a and b into integer vectors,
             // a.y != v0.y+i.
             image.set(x: j, y: v0.y+i, to: colour)
+        }
+    }
+}
+
+func barycentric(_ pts: [Vec2i], _ p: Vec2i) -> Vec3r {
+    let lx = Real(pts[2][0]-pts[0][0])
+    let ly = Real(pts[1][0]-pts[0][0])
+    let lz = Real(pts[0][0]-p[0])
+    let l = Vec3r(x: lx, y: ly, z: lz)
+
+    let rx = Real(pts[2][1]-pts[0][1])
+    let ry = Real(pts[1][1]-pts[0][1])
+    let rz = Real(pts[0][1]-p[1])
+    let r = Vec3r(x: rx, y: ry, z: rz)
+
+    let u = l ^ r
+
+    // `pts` and `p` have integer value coordinates.
+    // `abs(u[2]) < 1` means `u[2]` is 0, which means
+    // the triangle is degenerate. Return something with negative coords.
+    if abs(u.z) < 1 { return Vec3r(x: -1, y: -1, z: -1) }
+
+    let x = 1.0 - (u.x + u.y) / u.z
+    let y = u.y / u.z
+    let z = u.x / u.z
+    return Vec3r(x: x, y: y, z: z)
+}
+
+func triangle(_ pts: [Vec2i], _ image: inout TGAImage, _ colour: TGAColour) {
+    var bboxmin = Vec2i(x: image.width - 1, y: image.height - 1)
+    var bboxmax = Vec2i(x: 0, y: 0)
+    let clamp = Vec2i(x: image.width - 1, y: image.height - 1)
+    for i in 0..<3 {
+        bboxmin.x = max(0, min(bboxmin.x, pts[i].x))
+        bboxmin.y = max(0, min(bboxmin.y, pts[i].y))
+
+        bboxmax.x = max(clamp.x, min(bboxmax.x, pts[i].x))
+        bboxmax.y = max(clamp.y, min(bboxmax.y, pts[i].y))
+    }
+
+    for x in bboxmin.x...bboxmax.y {
+        for y in bboxmin.y...bboxmax.y {
+            let p = Vec2i(x: x, y: y)
+            let bcScreen = barycentric(pts, p)
+            if bcScreen.x < 0 || bcScreen.y < 0 || bcScreen.z < 0 {
+                continue
+            }
+            image.set(x: p.x, y: p.y, to: colour)
         }
     }
 }
