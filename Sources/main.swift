@@ -73,6 +73,9 @@ func line(_ a: Vec2i, _ b: Vec2i, _ image: inout TGAImage, _ colour: TGAColour) 
 
 @MainActor
 func triangle(_ v0: Vec2i, _ v1: Vec2i, _ v2: Vec2i, _ image: inout TGAImage, _ colour: TGAColour) {
+    // Discard degenerate triangles.
+    if v0.y == v1.y && v0.y == v2.y { return }
+
     // Create mutable copies of the input parameters.
     var v0 = v0
     var v1 = v1
@@ -83,41 +86,48 @@ func triangle(_ v0: Vec2i, _ v1: Vec2i, _ v2: Vec2i, _ image: inout TGAImage, _ 
     if v0.y > v2.y { swap(&v0, &v2) }
     if v1.y > v2.y { swap(&v1, &v2) }
 
-    // Draw the bottom half of the triangle.
-    // The height of the triangle.
+    // As v2 is the highest point, and v0 is the lowest,
+    // this calculates the total height of the triangle.
     let totalHeight = v2.y - v0.y
-    for y in v0.y...v1.y {
-        // The height of the bottom half.
-        let segmentHeight = v1.y - v0.y + 1
-        // 0 = bottom of triangle, 1 = top of triangle
-        // how far along through the long line we are
-        let alpha = Real(y - v0.y) / Real(totalHeight)
-        // 0 = bottom of segment, 1 = top of segment
-        // how far along through the short line we are
-        let beta  = Real(y - v0.y) / Real(segmentHeight)
-        // (v2 - v0) * alpha -- scale v0 from v2 by alpha
-        // +v0 -- put it back in right coordinate system
-        var a = v0 + (v2-v0) * alpha
-        // ditto for v0 to v1, scaled by beta.
-        var b = v0 + (v1-v0) * beta
-        // a is the point along the long line
-        // b is the point along the short line
+    // Scan up the triangle, drawing horizontal bands of colour.
+    for i in 0..<totalHeight {
+        // Most triangles can be split horizontally into two triangles:
+        //         * <-- v2
+        //        /|
+        //       / |
+        //      /  |
+        //     /---* <-- v1
+        //    /  /
+        //   / /
+        //  */       <-- v0
+        // To draw a horizontal band, we need to know both sides of the
+        // line. One will always land on the line v0 to v2. But depending
+        // on where we are up the triangle, the other point will either
+        // be on the line v0 to v1 or v1 to v2.
+        // If secondHalf is false, we need the line v0 to v1, if it is
+        // true then we need the line v1 to v2.
+        let secondHalf = i>v1.y-v0.y || v1.y == v0.y
+        // This is the height of the segment that we're in.
+        let segmentHeight = Real(secondHalf ? v2.y-v1.y : v1.y-v0.y)
+        // The alpha is the how far along v0 to v2 the point on that line is.
+        // 0 and the point is v0. 1 and the point is v2. Anything else,
+        // somewhere in between.
+        let alpha = Real(i) / Real(totalHeight)
+        // The beta is the same idea, but for the other line we're interested
+        // in. (v0 to v1 or v1 to v2.)
+        let beta = Real(i-(secondHalf ? v1.y - v0.y : 0)) / segmentHeight
+        // So now, using alpha and beta calculating the points on either
+        // side of the horizontal line we want to draw is trivial;
+        // we simply scale the line in question against alpha or beta.
+        var a =              v0 + (v2-v0)*alpha
+        var b = secondHalf ? v1 + (v2-v1)*beta : v0 + (v1-v0)*beta
+        // Sort a and b in ascending X order.
         if a.x > b.x { swap(&a, &b) }
+        // Finally, draw the line.
         for j in a.x...b.x {
-            image.set(x: j, y: y, to: colour)
-        }
-    }
-    // Do the same for the top half.
-    // (Except the beta line goes from v1 to v2.)
-    for y in v1.y...v2.y {
-        let segmentHeight = v2.y - v1.y + 1
-        let alpha = Real(y - v0.y) / Real(totalHeight)
-        let beta = Real(y - v1.y) / Real(segmentHeight)
-        var a = v0 + (v2-v0) * alpha
-        var b = v1 + (v2-v1) * beta
-        if a.x > b.x { swap(&a, &b) }
-        for j in a.x...b.x {
-            image.set(x: j, y: y, to: colour)
+            // Note that due to casting a and b into integer vectors,
+            // a.y != v0.y+i.
+            image.set(x: j, y: v0.y+i, to: colour)
         }
     }
 }
