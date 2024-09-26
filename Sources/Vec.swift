@@ -203,14 +203,7 @@ public struct Vec3<T : Number> : CustomStringConvertible {
 
     /// Transform this vector so its length is `length` (default 1).
     public mutating func normalise(toLength l: Real = 1) {
-        print("l=\(l) length=\(length) scale = \(l / length)")
         self = self * (l / length)
-        /*
-        let scale = l / 
-        rawX = rawX * scale
-        rawY = rawY * scale
-        rawZ = rawZ * scale
-        */
     }
 
     public var description: String {

@@ -6,24 +6,11 @@ let green = TGAColour(r: 0, g: 255, b: 0, a: 255)
 let width = 800
 let height = 800
 
-var tImage = TGAImage(width: 200, height: 200, format: .rgb)
-let t0 = [Vec2i(x: 10, y: 70), Vec2i(x: 50, y: 160), Vec2i(x: 70, y: 80)]
-let t1 = [Vec2i(x: 180, y: 50), Vec2(x: 150, y: 1), Vec2i(x: 70, y: 180)]
-let t2 = [Vec2i(x: 180, y: 150), Vec2i(x: 120, y: 160), Vec2i(x: 130, y: 180)]
-triangle(t0, &tImage, red)
-triangle(t1, &tImage, white)
-triangle(t2, &tImage, green)
-tImage.flipVertically() // Move origin to bottom left corner.
-if !tImage.write(fileTo: "triangles.tga", vflip: false, rle: true) {
-    print("Failed to write image.")
-}
-
 if CommandLine.arguments.count != 2 {
     print("usage: tinyrenderer model_file.obj")
     exit(1)
 }
 let model = Model(fromFile: CommandLine.arguments[1])
-
 
 var image = TGAImage(width: width, height: height, format: .rgb)
 
@@ -180,19 +167,32 @@ func triangle(_ pts: [Vec2i], _ image: inout TGAImage, _ colour: TGAColour) {
     }
 }
 
+let lightDir = Vec3r(x: 0, y: 0, z: -1)
+var screenCoords = [Vec2i](repeating: Vec2i(), count: 3)
+var worldCoords = [Vec3r](repeating: Vec3r(), count: 3)
 for i in 0..<model.nfaces {
+    print("\rface: \(i) of \(model.nfaces)")
     let face = model.face(i)
     let halfWidth = Real(width) / 2.0
     let halfHeight = Real(height) / 2.0
     for j in 0..<3 {
         let v0 = model.vert(face[j])
-        let v1 = model.vert(face[(j+1)%3])
         let x0 = Int((v0.x + 1.0) * halfWidth)
         let y0 = Int((v0.y + 1.0) * halfHeight)
-        let x1 = Int((v1.x + 1.0) * halfWidth)
-        let y1 = Int((v1.y + 1.0) * halfHeight)
-        line(x0, y0, x1, y1, &image, white)
+        screenCoords[j] = Vec2i(x: x0, y: y0)
+        worldCoords[j]  = v0
     }
+    // Get a unit vector perpendicular to the triangle.
+    var n = (worldCoords[2]-worldCoords[0])^(worldCoords[1]-worldCoords[0])
+    n.normalise()
+    let intensity = n * lightDir
+    if intensity < 0.0 { continue }
+
+    let r = UInt8(255 * intensity)
+    let g = UInt8(255 * intensity)
+    let b = UInt8(255 * intensity)
+    let c = TGAColour(r: r, g: g, b: b, a:255)
+    triangle(screenCoords, &image, c)
 }
 
 image.flipVertically() // Move origin to bottom left corner.
