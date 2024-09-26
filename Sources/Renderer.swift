@@ -15,10 +15,11 @@ public struct Renderer {
 
     public mutating func render(model: Model) {
         let lightDir = Vec3r(x: 0, y: 0, z: -1)
+        var c = TGAColour(r: 0, g: 0, b: 0, a: 255)
         var screenCoords = [Vec2i](repeating: Vec2i(), count: 3)
         var worldCoords = [Vec3r](repeating: Vec3r(), count: 3)
         for i in 0..<model.nfaces {
-            print("\rface: \(i) of \(model.nfaces)")
+            //print("\rface: \(i) of \(model.nfaces)")
             let face = model.face(i)
             let halfWidth = Real(image.width) / 2.0
             let halfHeight = Real(image.height) / 2.0
@@ -35,15 +36,15 @@ public struct Renderer {
             let intensity = n * lightDir
             if intensity < 0.0 { continue }
 
-            let r = UInt8(255 * intensity)
-            let g = UInt8(255 * intensity)
-            let b = UInt8(255 * intensity)
-            let c = TGAColour(r: r, g: g, b: b, a:255)
+            let lightVal = UInt8(255 * intensity)
+            c.r = lightVal
+            c.g = lightVal
+            c.b = lightVal
             drawTriangle(screenCoords, c)
         }
     }
 
-    public mutating func drawTriangle(_ a: Vec2i, _ b: Vec2i, _ colour: TGAColour) {
+    public mutating func drawLine(_ a: Vec2i, _ b: Vec2i, _ colour: TGAColour) {
         // Create mutable copies of arguments, so we can swap them about.
         var x0 = a.x
         var y0 = a.y
@@ -84,7 +85,6 @@ public struct Renderer {
     }
 
     public mutating func drawTriangle(_ pts: [Vec2i], _ colour: TGAColour) {
-        assert(pts.count == 3, "incorrect number of points passed to Renderer::drawTriangle.")
         var bboxmin = Vec2i(x: image.width - 1, y: image.height - 1)
         var bboxmax = Vec2i(x: 0, y: 0)
         let clamp = Vec2i(x: image.width - 1, y: image.height - 1)
