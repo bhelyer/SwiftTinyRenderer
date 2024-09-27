@@ -294,10 +294,16 @@ public struct TGAImage {
         assert(x0 >= 0 && x0 < width)
         assert(x1 >= 0 && x1 >= x0 && x1 < width)
         assert(y >= 0 && y < height);
-        assert(bpp == 3)
+        assert(bpp == 3) // See comment above loop.
         let start = (x0 + y * width) * Int(bpp)
         let end = (x1 + y * width) * Int(bpp)
         bytes.withUnsafeMutableBufferPointer {
+            // If we know that every colour byte is the same, this is faster:
+            //   ($0.baseAddress! + start).update(repeating: colour[0], count: end - start)
+            // If the buffer format was RGBA, these could be rebound to pointers to UInt32,
+            // and you could do something similar for even more speed.
+            // Not doing that now, as it makes more sense to wait until textures are present,
+            // and we actually output realtime to a display. But worth noting.
             for i in start...end {
                 $0[i] = colour[0]
                 $0[i + 1] = colour[1]

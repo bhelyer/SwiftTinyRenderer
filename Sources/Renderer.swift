@@ -2,7 +2,7 @@ public struct Renderer {
     private var image: TGAImage
 
     public init(width: Int, height: Int) {
-        image = TGAImage(width: width, height: height, format: .rgb)
+        image = TGAImage(width: width, height: height, format: .rgba)
     }
 
     public func saveScreenshot(to filename: String) throws {
