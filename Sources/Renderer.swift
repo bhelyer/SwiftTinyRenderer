@@ -84,7 +84,8 @@ public struct Renderer {
         }
     }
 
-    public mutating func drawTriangle(_ pts: [Vec2i], _ colour: TGAColour) {
+    // This, absent anything else, is a lot slower than the other function.
+    public mutating func drawBarycentricTriangle(_ pts: [Vec2i], _ colour: TGAColour) {
         var bboxmin = Vec2i(x: image.width - 1, y: image.height - 1)
         var bboxmax = Vec2i(x: 0, y: 0)
         let clamp = Vec2i(x: image.width - 1, y: image.height - 1)
@@ -107,6 +108,67 @@ public struct Renderer {
             }
         }
     }
+
+    public mutating func drawTriangle(_ pts: [Vec2i], _ colour: TGAColour) {
+        // Create mutable copies of the input parameters.
+        var v0 = pts[0]
+        var v1 = pts[1]
+        var v2 = pts[2]
+    
+        // Discard degenerate triangles.
+        if v0.y == v1.y && v0.y == v2.y { return }
+
+        // Sort the input paramaters in ascending Y order.
+        if v0.y > v1.y { swap(&v0, &v1) }
+        if v0.y > v2.y { swap(&v0, &v2) }
+        if v1.y > v2.y { swap(&v1, &v2) }
+
+        // As v2 is the highest point, and v0 is the lowest,
+        // this calculates the total height of the triangle.
+        let totalHeight = v2.y - v0.y
+        colour.bgra.withUnsafeBufferPointer {
+            // Scan up the triangle, drawing horizontal bands of colour.
+            for i in 0..<totalHeight {
+                // Most triangles can be split horizontally into two triangles:
+                //         * <-- v2
+                //        /|
+                //       / |
+                //      /  |
+                //     /---* <-- v1
+                //    /  /
+                //   / /
+                //  */       <-- v0
+                // To draw a horizontal band, we need to know both sides of the
+                // line. One will always land on the line v0 to v2. But depending
+                // on where we are up the triangle, the other point will either
+                // be on the line v0 to v1 or v1 to v2.
+                // If secondHalf is false, we need the line v0 to v1, if it is
+                // true then we need the line v1 to v2.
+                let secondHalf = i>v1.y-v0.y || v1.y == v0.y
+                // This is the height of the segment that we're in.
+                let segmentHeight = Real(secondHalf ? v2.y-v1.y : v1.y-v0.y)
+                // The alpha is the how far along v0 to v2 the point on that line is.
+                // 0 and the point is v0. 1 and the point is v2. Anything else,
+                // somewhere in between.
+                let alpha = Real(i) / Real(totalHeight)
+                // The beta is the same idea, but for the other line we're interested
+                // in. (v0 to v1 or v1 to v2.)
+                let beta = Real(i-(secondHalf ? v1.y - v0.y : 0)) / segmentHeight
+                // So now, using alpha and beta calculating the points on either
+                // side of the horizontal line we want to draw is trivial;
+                // we simply scale the line in question against alpha or beta.
+                var a =              v0 + (v2-v0)*alpha
+                var b = secondHalf ? v1 + (v2-v1)*beta : v0 + (v1-v0)*beta
+                // Sort a and b in ascending X order.
+                if a.x > b.x { swap(&a, &b) }
+                // Finally, draw the line.
+                // Note that due to casting a and b into integer vectors,
+                // a.y != v0.y+i.
+                image.setHorizUnsafe(x0: a.x, x1: b.x, y: v0.y + i, to: $0)
+            }
+        }
+    }
+
 }
 
 public enum RendererError : Error {

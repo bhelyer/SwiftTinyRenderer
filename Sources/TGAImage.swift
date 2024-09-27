@@ -288,9 +288,27 @@ public struct TGAImage {
         return colour
     }
 
+    public mutating func setHorizUnsafe(x0: Int, x1: Int, y: Int, to colour: UnsafeBufferPointer<UInt8>)
+    {
+        assert(bytes.count != 0)
+        assert(x0 >= 0 && x0 < width)
+        assert(x1 >= 0 && x1 >= x0 && x1 < width)
+        assert(y >= 0 && y < height);
+        assert(bpp == 3)
+        let start = (x0 + y * width) * Int(bpp)
+        let end = (x1 + y * width) * Int(bpp)
+        bytes.withUnsafeMutableBufferPointer {
+            for i in start...end {
+                $0[i] = colour[0]
+                $0[i + 1] = colour[1]
+                $0[i + 2] = colour[2]
+            }
+        }
+    }
+
     @discardableResult
     public mutating func set(x: Int, y: Int, to colour: TGAColour) -> Bool {
-        if bytes.count == 0 || x < 0 || y < 0 || x >= width || y >= width {
+        if bytes.count == 0 || x < 0 || y < 0 || x >= width || y >= height {
             return false
         }
         let i = (x + y * width) * Int(bpp)

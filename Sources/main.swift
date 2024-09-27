@@ -27,7 +27,7 @@ if CommandLine.arguments.count == 2 {
         printUsageAndExit()
     }
 }
-var renderCount = benchmark ? 1000000 : 1
+var renderCount = benchmark ? 10000 : 1
 
 // Actually do the rendering.
 let model = Model(fromFile: modelFilename)
