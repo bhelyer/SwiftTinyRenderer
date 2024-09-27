@@ -2,13 +2,13 @@ public struct Renderer {
     private var image: TGAImage
 
     public init(width: Int, height: Int) {
-        image = TGAImage(width: width, height: height, format: .rgba)
+        image = TGAImage(width: width, height: height, format: .rgb)
     }
 
     public func saveScreenshot(to filename: String) throws {
         var snapshot = image
         snapshot.flipVertically()
-        if !snapshot.write(fileTo: "output.tga", vflip: false, rle: true) {
+        if !snapshot.write(fileTo: filename, vflip: false, rle: true) {
             throw RendererError.saveFailed
         }
     }
