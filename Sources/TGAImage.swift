@@ -85,7 +85,13 @@ private struct TGAHeader {
     }
 }
 
-public struct TGAColour {
+public struct TGAColour: Sendable {
+    public static let white = TGAColour(r: 255, g: 255, b: 255, a: 255)
+    public static let black = TGAColour(r: 0, g: 0, b: 0, a: 255)
+    public static let red = TGAColour(r: 255, g: 0, b: 0, a: 255)
+    public static let green = TGAColour(r: 0, g: 255, b: 0, a: 255)
+    public static let blue = TGAColour(r: 0, g: 0, b: 255, a: 255)
+
     public var bgra: [UInt8] = [0, 0, 0, 0]
     public var b: UInt8 {
         get {
