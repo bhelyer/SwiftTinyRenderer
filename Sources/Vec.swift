@@ -30,7 +30,7 @@ public struct Vec2i : CustomStringConvertible {
 
     public init(x: Int, y: Int) {
         self.x = x
-        self.x = y
+        self.y = y
     }
     
     public static func +(left: Vec2i, right: Vec2i) -> Vec2i {
@@ -43,6 +43,56 @@ public struct Vec2i : CustomStringConvertible {
 
     public static func *(left: Vec2i, right: Real) -> Vec2i {
         return Vec2i(x: Int(Real(left.x) * right), y: Int(Real(left.y) * right))
+    }
+
+    public var description: String {
+        return "(\(x), \(y))"
+    }
+}
+
+public struct Vec2r : CustomStringConvertible {
+    public var x = Real(0)
+    public var y = Real(0)
+
+    public subscript(componentIndex: Int) -> Real {
+        get {
+            assert(componentIndex == 0 || componentIndex == 1, "Vec2: bad index")
+            if componentIndex == 0 {
+                return x
+            } else if componentIndex == 1 {
+                return y
+            } else {
+                return Real(0)
+            }
+        }
+        set(newValue) {
+            assert(componentIndex == 0 || componentIndex == 1, "Vec2: bad index")
+            if componentIndex == 0 {
+                x = newValue
+            } else if componentIndex == 1 {
+                y = newValue
+            }
+        }
+    }
+
+    public init() {
+    }
+
+    public init(x: Real, y: Real) {
+        self.x = x
+        self.y = y
+    }
+    
+    public static func +(left: Vec2r, right: Vec2r) -> Vec2r {
+        return Vec2r(x: left.x + right.x, y: left.y + right.y)
+    }
+
+    public static func -(left: Vec2r, right: Vec2r) -> Vec2r {
+        return Vec2r(x: left.x - right.x, y: left.y - right.y)
+    }
+
+    public static func *(left: Vec2r, right: Real) -> Vec2r {
+        return Vec2r(x: left.x * right, y: Real(left.y) * right)
     }
 
     public var description: String {

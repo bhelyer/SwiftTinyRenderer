@@ -1,12 +1,12 @@
-public func barycentric(_ pts: [Vec2i], _ p: Vec3r) -> Vec3r {
-    let lx = Real(pts[2][0]-pts[0][0])
-    let ly = Real(pts[1][0]-pts[0][0])
-    let lz = Real(pts[0][0])-p[0]
+public func barycentric(_ pts: [Vec3r], _ p: Vec3r) -> Vec3r {
+    let lx = pts[2].x - pts[0].x
+    let ly = pts[1].x - pts[0].x
+    let lz = pts[0].x - p.x
     let l = Vec3r(x: lx, y: ly, z: lz)
 
-    let rx = Real(pts[2][1]-pts[0][1])
-    let ry = Real(pts[1][1]-pts[0][1])
-    let rz = Real(pts[0][1])-p[1]
+    let rx = pts[2].y - pts[0].y
+    let ry = pts[1].y - pts[0].y
+    let rz = pts[0].y - p.y
     let r = Vec3r(x: rx, y: ry, z: rz)
 
     let u = l ^ r

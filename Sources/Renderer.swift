@@ -1,14 +1,24 @@
 public class Renderer {
     private var image: TGAImage
-    private var zbuffer: UnsafeMutableBufferPointer<Int>
+    private var zbuffer: UnsafeMutableBufferPointer<Real>
+    private var screenCoords: [Vec3r]//UnsafeMutableBufferPointer<Vec3r>
+    private var worldCoords: [Vec3r]//UnsafeMutableBufferPointer<Vec3r>
 
     public init(width: Int, height: Int) {
         image = TGAImage(width: width, height: height, format: .rgb)
-        zbuffer = UnsafeMutableBufferPointer<Int>.allocate(capacity: width * height)
+        zbuffer = UnsafeMutableBufferPointer<Real>.allocate(capacity: width * height)
+        zbuffer.initialize(repeating: -Real.greatestFiniteMagnitude)
+        screenCoords = [Vec3r](repeating: Vec3r(), count: 3)
+        worldCoords = [Vec3r](repeating: Vec3r(), count: 3)//UnsafeMutableBufferPointer<Vec3r>.allocate(capacity: 3)
+        //screenCoords.initialize(repeating: Vec2i())
+        ///worldCoords = UnsafeMutableBufferPointer<Vec3r>.allocate(capacity: 3)
+        //worldCoords.initialize(repeating: Vec3r())
     }
 
     deinit {
         zbuffer.deallocate()
+        //screenCoords.deallocate()
+        //worldCoords.deallocate()
     }
 
     public func saveScreenshot(to filename: String) throws {
@@ -22,8 +32,8 @@ public class Renderer {
     public func render(model: Model) {
         let lightDir = Vec3r(x: 0, y: 0, z: -1)
         var c = TGAColour(r: 0, g: 0, b: 0, a: 255)
-        var screenCoords = [Vec2i](repeating: Vec2i(), count: 3)
-        var worldCoords = [Vec3r](repeating: Vec3r(), count: 3)
+        //var screenCoords = [Vec2i](repeating: Vec2i(), count: 3)
+        //var worldCoords = [Vec3r](repeating: Vec3r(), count: 3)
         for i in 0..<model.nfaces {
             //print("\rface: \(i) of \(model.nfaces)")
             let face = model.face(i)
@@ -31,9 +41,9 @@ public class Renderer {
             let halfHeight = Real(image.height) / 2.0
             for j in 0..<3 {
                 let v0 = model.vert(face[j])
-                let x0 = Int((v0.x + 1.0) * halfWidth)
-                let y0 = Int((v0.y + 1.0) * halfHeight)
-                screenCoords[j] = Vec2i(x: x0, y: y0)
+                let x0 = Int((v0.x + 1.0) * halfWidth + 0.5)
+                let y0 = Int((v0.y + 1.0) * halfHeight + 0.5)
+                screenCoords[j] = Vec3r(x: Real(x0), y: Real(y0), z: v0.z)
                 worldCoords[j]  = v0
             }
             // Get a unit vector perpendicular to the triangle.
@@ -91,10 +101,10 @@ public class Renderer {
     }
 
     // This, absent anything else, is a lot slower than the other function.
-    public func drawBarycentricTriangle(_ pts: [Vec2i], _ colour: TGAColour) {
-        var bboxmin = Vec2i(x: image.width - 1, y: image.height - 1)
-        var bboxmax = Vec2i(x: 0, y: 0)
-        let clamp = Vec2i(x: image.width - 1, y: image.height - 1)
+    public func drawBarycentricTriangle(_ pts: [Vec3r], _ colour: TGAColour) {
+        var bboxmin = Vec2r(x: Real.greatestFiniteMagnitude, y: Real.greatestFiniteMagnitude)
+        var bboxmax = Vec2r(x: -Real.greatestFiniteMagnitude, y: -Real.greatestFiniteMagnitude)
+        let clamp = Vec2r(x: Real(image.width - 1), y: Real(image.height - 1))
         for i in 0..<3 {
             bboxmin.x = max(0, min(bboxmin.x, pts[i].x))
             bboxmin.y = max(0, min(bboxmin.y, pts[i].y))
@@ -103,21 +113,27 @@ public class Renderer {
             bboxmax.y = max(clamp.y, min(bboxmax.y, pts[i].y))
         }
 
-        for x in bboxmin.x...bboxmax.y {
-            for y in bboxmin.y...bboxmax.y {
-                var p = Vec3r(x: Real(x), y: Real(y), z: 0)
+        var p = Vec3r()
+        p.x = bboxmin.x
+        while p.x <= bboxmax.x {
+            //for y in bboxmin.y...bboxmax.y {
+            p.y = bboxmin.y
+            while p.y <= bboxmax.y {
                 let bcScreen = barycentric(pts, p)
                 if bcScreen.x < 0 || bcScreen.y < 0 || bcScreen.z < 0 {
+                    p.y += 1.0
                     continue
                 }
                 p.z = 0
                 for i in 0..<3 { p.z += Real(pts[i][2]) * bcScreen[i] }
                 let index = Int(p.y) * image.width + Int(p.x)
-                if zbuffer[index] < Int(p.z) {
-                    zbuffer[index] = Int(p.z)
+                if zbuffer[index] < p.z {
+                    zbuffer[index] = p.z
                     image.set(x: Int(p.x), y: Int(p.y), to: colour)
                 }
+                p.y += 1.0
             }
+            p.x += 1.0
         }
     }
 
