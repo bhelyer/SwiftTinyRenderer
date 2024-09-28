@@ -1,8 +1,10 @@
 public struct Renderer {
     private var image: TGAImage
+    private var zbuffer: [Int]
 
     public init(width: Int, height: Int) {
         image = TGAImage(width: width, height: height, format: .rgb)
+        zbuffer = [Int](repeating: Int.min, count: width * height)
     }
 
     public func saveScreenshot(to filename: String) throws {
@@ -40,7 +42,7 @@ public struct Renderer {
             c.r = lightVal
             c.g = lightVal
             c.b = lightVal
-            drawTriangle(screenCoords, c)
+            drawBarycentricTriangle(screenCoords, c)
         }
     }
 
@@ -99,12 +101,15 @@ public struct Renderer {
 
         for x in bboxmin.x...bboxmax.y {
             for y in bboxmin.y...bboxmax.y {
-                let p = Vec2i(x: x, y: y)
+                var p = Vec3r(x: Real(x), y: Real(y), z: 0)
                 let bcScreen = barycentric(pts, p)
-                if bcScreen.x < 0 || bcScreen.y < 0 || bcScreen.z < 0 {
-                    continue
+                p.z = 0
+                for i in 0..<3 { p.z += Real(pts[i][2]) * bcScreen[i] }
+                let index = Int(p.y) * image.width + Int(p.x)
+                if zbuffer[index] < Int(p.z) {
+                    zbuffer[index] = Int(p.z)
+                    image.set(x: Int(p.x), y: Int(p.y), to: colour)
                 }
-                image.set(x: p.x, y: p.y, to: colour)
             }
         }
     }
