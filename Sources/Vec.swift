@@ -1,217 +1,132 @@
 public typealias Real = Double
 
-public protocol Number {
-    init(_ value: Int)
-    init(_ value: Real)
-    init(_ value: Self)
-    static func +(lhs: Self, rhs: Self) -> Self
-    static func -(lhs: Self, rhs: Self) -> Self
-    static func *(lhs: Self, rhs: Self) -> Self
-    static func /(lhs: Self, rhs: Self) -> Self
-    static func *(lhs: Self, rhs: Real) -> Self
-    static func *(lhs: Real, rhs: Self) -> Self
-    func squareRoot() -> Real
-}
+public struct Vec2i : CustomStringConvertible {
+    public var x = 0
+    public var y = 0
 
-extension Real : Number {
-}
-
-extension Int : Number {
-    @inlinable public static func *(lhs: Int, rhs: Real) -> Int {
-        return Int(Real(lhs) * rhs)
-    }
-
-    @inlinable public static func *(lhs: Real, rhs: Int) -> Int {
-        return Int(lhs * Real(rhs))
-    }
-
-    @inlinable public func squareRoot() -> Real {
-        return Real(self).squareRoot()
-    }
-}
-
-public struct Vec2<T : Number> : CustomStringConvertible {
-    @usableFromInline var rawX = T(0)
-    @usableFromInline var rawY = T(0)
-
-    @inlinable public var x: T {
-        get { return rawX }
-        set(newValue) { rawX = newValue }
-    }
-
-    @inlinable public var y: T {
-        get { return rawY }
-        set(newValue) { rawY = newValue }
-    }
-
-    @inlinable public var u: T {
-        get { return rawX }
-        set(newValue) { rawX = newValue }
-    }
-
-    @inlinable public var v: T {
-        get { return rawY }
-        set(newValue) { rawY = newValue }
-    }
-
-    @inlinable public subscript(componentIndex: Int) -> T {
+    public subscript(componentIndex: Int) -> Int {
         get {
             assert(componentIndex == 0 || componentIndex == 1, "Vec2: bad index")
             if componentIndex == 0 {
-                return rawX
+                return x
             } else if componentIndex == 1 {
-                return rawY
+                return y
             } else {
-                return T(0)
+                return Int(0)
             }
         }
         set(newValue) {
             assert(componentIndex == 0 || componentIndex == 1, "Vec2: bad index")
             if componentIndex == 0 {
-                rawX = newValue
+                x = newValue
             } else if componentIndex == 1 {
-                rawY = newValue
+                y = newValue
             }
         }
     }
 
-    @inlinable public init() {
+    public init() {
     }
 
-    @inlinable public init(x: T, y: T) {
-        self.rawX = x
-        self.rawY = y
+    public init(x: Int, y: Int) {
+        self.x = x
+        self.x = y
     }
     
-    @inlinable public static func +(left: Vec2<T>, right: Vec2<T>) -> Vec2<T> {
-        return Vec2<T>(x: left.x + right.x, y: left.y + right.y)
+    public static func +(left: Vec2i, right: Vec2i) -> Vec2i {
+        return Vec2i(x: left.x + right.x, y: left.y + right.y)
     }
 
-    @inlinable public static func -(left: Vec2<T>, right: Vec2<T>) -> Vec2<T> {
-        return Vec2<T>(x: left.x - right.x, y: left.y - right.y)
+    public static func -(left: Vec2i, right: Vec2i) -> Vec2i {
+        return Vec2i(x: left.x - right.x, y: left.y - right.y)
     }
 
-    @inlinable public static func *(left: Vec2<T>, right: Real) -> Vec2<T> {
-        return Vec2<T>(x: left.x * right, y: left.y * right)
+    public static func *(left: Vec2i, right: Real) -> Vec2i {
+        return Vec2i(x: Int(Real(left.x) * right), y: Int(Real(left.y) * right))
     }
 
-    @inlinable public var description: String {
-        return "(\(rawX), \(rawY))"
+    public var description: String {
+        return "(\(x), \(y))"
     }
 }
 
-public struct Vec3<T : Number> : CustomStringConvertible {
-    @usableFromInline var rawX = T(0)
-    @usableFromInline var rawY = T(0)
-    @usableFromInline var rawZ = T(0)
+public struct Vec3r : CustomStringConvertible {
+    public var x = Real(0)
+    public var y = Real(0)
+    public var z = Real(0)
 
-    @inlinable public var x: T {
-        get { return rawX }
-        set(newValue) { rawX = newValue }
-    }
-
-    @inlinable public var y: T {
-        get { return rawY }
-        set(newValue) { rawY = newValue }
-    }
-
-    @inlinable public var z: T {
-        get { return rawZ }
-        set(newValue) { rawZ = newValue }
-    }
-
-    @inlinable public var ivert: T {
-        get { return rawX }
-        set(newValue) { rawX = newValue }
-    }
-
-    @inlinable public var iuv: T {
-        get { return rawY }
-        set(newValue) { rawY = newValue }
-    }
-
-    @inlinable public var inorm: T {
-        get { return rawZ }
-        set(newValue) { rawZ = newValue }
-    }
-
-    @inlinable public subscript(componentIndex: Int) -> T {
+    public subscript(componentIndex: Int) -> Real {
         get {
             assert(componentIndex >= 0 && componentIndex <= 2, "Vec3: bad index")
             if componentIndex == 0 {
-                return rawX
+                return x
             } else if componentIndex == 1 {
-                return rawY
+                return y
             } else if componentIndex == 2 {
-                return rawZ
+                return z
             } else {
-                return T(0)
+                return Real(0)
             }
         }
         set(newValue) {
             assert(componentIndex >= 0 && componentIndex <= 2, "Vec3: bad index")
             if componentIndex == 0 {
-                rawX = newValue
+                x = newValue
             } else if componentIndex == 1 {
-                rawY = newValue
+                y = newValue
             } else if componentIndex == 2 {
-                rawZ = newValue
+                z = newValue
             }
         }
     }
 
-    @inlinable public init() {
+    public init() {
     }
 
-    @inlinable public init(x: T, y: T, z: T) {
-        rawX = x
-        rawY = y
-        rawZ = z
+    public init(x: Real, y: Real, z: Real) {
+        self.x = x
+        self.y = y
+        self.z = z
     }
     
     /// Calculate the cross product of two vectors.
-    @inlinable public static func ^(left: Vec3<T>, right: Vec3<T>) -> Vec3<T> {
-        return Vec3<T>(x: left.y * right.z - left.z * right.y,
+    public static func ^(left: Vec3r, right: Vec3r) -> Vec3r {
+        return Vec3r(x: left.y * right.z - left.z * right.y,
                        y: left.z * right.x - left.x * right.z,
                        z: left.x * right.y - left.y * right.x)
     }
 
-    @inlinable public static func +(left: Vec3<T>, right: Vec3<T>) -> Vec3<T> {
-        return Vec3<T>(x: left.x + right.x, y: left.y + right.y, z: left.z + right.z)
+    public static func +(left: Vec3r, right: Vec3r) -> Vec3r {
+        return Vec3r(x: left.x + right.x, y: left.y + right.y, z: left.z + right.z)
     }
 
-    @inlinable public static func -(left: Vec3<T>, right: Vec3<T>) -> Vec3<T> {
-        return Vec3<T>(x: left.x - right.x, y: left.y - right.y, z: left.z - right.z)
+    public static func -(left: Vec3r, right: Vec3r) -> Vec3r {
+        return Vec3r(x: left.x - right.x, y: left.y - right.y, z: left.z - right.z)
     }
 
-    @inlinable public static func *(left: Vec3<T>, right: Real) -> Vec3<T> {
-        return Vec3<T>(x: left.x * right, y: left.y * right, z: left.z * right)
+    public static func *(left: Vec3r, right: Real) -> Vec3r {
+        return Vec3r(x: left.x * right, y: left.y * right, z: left.z * right)
     }
 
     /// Calculate the dot product of two vectors.
-    @inlinable public static func *(left: Vec3<T>, right: Vec3<T>) -> T {
+    public static func *(left: Vec3r, right: Vec3r) -> Real {
         return left.x * right.x + left.y * right.y + left.z * right.z
     }
 
     /// Return the length of this vector.
-    @inlinable public var length: Real {
-        let xx = rawX * rawX
-        let yy = rawY * rawY
-        let zz = rawZ * rawZ
+    public var length: Real {
+        let xx = x * x
+        let yy = y * y
+        let zz = z * z
         return (xx + yy + zz).squareRoot()
     }
 
     /// Transform this vector so its length is `length` (default 1).
-    @inlinable public mutating func normalise(toLength l: Real = 1) {
+    public mutating func normalise(toLength l: Real = 1) {
         self = self * (l / length)
     }
 
-    @inlinable public var description: String {
-        return "(\(rawX), \(rawY), \(rawZ))"
+    public var description: String {
+        return "(\(x), \(y), \(z))"
     }
 }
-
-public typealias Vec2r = Vec2<Real>
-public typealias Vec2i = Vec2<Int>
-public typealias Vec3r = Vec3<Real>
-public typealias Vec3i = Vec3<Int>
