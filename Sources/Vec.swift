@@ -1,4 +1,4 @@
-public typealias Real = Double
+public typealias Real = Float
 
 public struct Vec2i : CustomStringConvertible {
     public var x = 0
