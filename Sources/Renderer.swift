@@ -119,7 +119,7 @@ public class Renderer {
             //for y in bboxmin.y...bboxmax.y {
             p.y = bboxmin.y
             while p.y <= bboxmax.y {
-                let bcScreen = barycentric(pts, p)
+                let bcScreen = barycentric(pts[0], pts[1], pts[2], p)
                 if bcScreen.x < 0 || bcScreen.y < 0 || bcScreen.z < 0 {
                     p.y += 1.0
                     continue
