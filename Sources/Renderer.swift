@@ -1,10 +1,14 @@
-public struct Renderer {
+public class Renderer {
     private var image: TGAImage
-    private var zbuffer: [Int]
+    private var zbuffer: UnsafeMutableBufferPointer<Int>
 
     public init(width: Int, height: Int) {
         image = TGAImage(width: width, height: height, format: .rgb)
-        zbuffer = [Int](repeating: Int.min, count: width * height)
+        zbuffer = UnsafeMutableBufferPointer<Int>.allocate(capacity: width * height)
+    }
+
+    deinit {
+        zbuffer.deallocate()
     }
 
     public func saveScreenshot(to filename: String) throws {
@@ -15,7 +19,7 @@ public struct Renderer {
         }
     }
 
-    public mutating func render(model: Model) {
+    public func render(model: Model) {
         let lightDir = Vec3r(x: 0, y: 0, z: -1)
         var c = TGAColour(r: 0, g: 0, b: 0, a: 255)
         var screenCoords = [Vec2i](repeating: Vec2i(), count: 3)
@@ -46,7 +50,7 @@ public struct Renderer {
         }
     }
 
-    public mutating func drawLine(_ a: Vec2i, _ b: Vec2i, _ colour: TGAColour) {
+    public func drawLine(_ a: Vec2i, _ b: Vec2i, _ colour: TGAColour) {
         // Create mutable copies of arguments, so we can swap them about.
         var x0 = a.x
         var y0 = a.y
@@ -87,7 +91,7 @@ public struct Renderer {
     }
 
     // This, absent anything else, is a lot slower than the other function.
-    public mutating func drawBarycentricTriangle(_ pts: [Vec2i], _ colour: TGAColour) {
+    public func drawBarycentricTriangle(_ pts: [Vec2i], _ colour: TGAColour) {
         var bboxmin = Vec2i(x: image.width - 1, y: image.height - 1)
         var bboxmax = Vec2i(x: 0, y: 0)
         let clamp = Vec2i(x: image.width - 1, y: image.height - 1)
@@ -103,6 +107,9 @@ public struct Renderer {
             for y in bboxmin.y...bboxmax.y {
                 var p = Vec3r(x: Real(x), y: Real(y), z: 0)
                 let bcScreen = barycentric(pts, p)
+                if bcScreen.x < 0 || bcScreen.y < 0 || bcScreen.z < 0 {
+                    continue
+                }
                 p.z = 0
                 for i in 0..<3 { p.z += Real(pts[i][2]) * bcScreen[i] }
                 let index = Int(p.y) * image.width + Int(p.x)
@@ -114,7 +121,7 @@ public struct Renderer {
         }
     }
 
-    public mutating func drawTriangle(_ pts: [Vec2i], _ colour: TGAColour) {
+    public func drawTriangle(_ pts: [Vec2i], _ colour: TGAColour) {
         // Create mutable copies of the input parameters.
         var v0 = pts[0]
         var v1 = pts[1]
