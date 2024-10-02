@@ -30,7 +30,7 @@ public class Renderer {
     }
 
     public func render(model: Model) {
-        let lightDir = Vec3r(x: 0, y: 0, z: -1)
+        //let lightDir = Vec3r(x: 0, y: 0, z: -1)
         var c = TGAColour(r: 0, g: 0, b: 0, a: 255)
         //var screenCoords = [Vec2i](repeating: Vec2i(), count: 3)
         //var worldCoords = [Vec3r](repeating: Vec3r(), count: 3)
@@ -47,6 +47,7 @@ public class Renderer {
                 worldCoords[j]  = v0
             }
             // Get a unit vector perpendicular to the triangle.
+            /*
             var n = (worldCoords[2]-worldCoords[0])^(worldCoords[1]-worldCoords[0])
             n.normalise()
             let intensity = n * lightDir
@@ -56,6 +57,10 @@ public class Renderer {
             c.r = lightVal
             c.g = lightVal
             c.b = lightVal
+             */
+            c.r = UInt8.random(in: 0...255)
+            c.g = UInt8.random(in: 0...255)
+            c.b = UInt8.random(in: 0...255)
             drawBarycentricTriangle(screenCoords, c)
         }
     }
