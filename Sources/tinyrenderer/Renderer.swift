@@ -1,24 +1,19 @@
 public class Renderer {
     private var image: TGAImage
     private var zbuffer: UnsafeMutableBufferPointer<Real>
-    private var screenCoords: [Vec3r]//UnsafeMutableBufferPointer<Vec3r>
-    private var worldCoords: [Vec3r]//UnsafeMutableBufferPointer<Vec3r>
+    private var screenCoords: [Vec3r]
+    private var worldCoords: [Vec3r]
 
     public init(width: Int, height: Int) {
         image = TGAImage(width: width, height: height, format: .rgb)
         zbuffer = UnsafeMutableBufferPointer<Real>.allocate(capacity: width * height)
         zbuffer.initialize(repeating: -Real.greatestFiniteMagnitude)
         screenCoords = [Vec3r](repeating: Vec3r(), count: 3)
-        worldCoords = [Vec3r](repeating: Vec3r(), count: 3)//UnsafeMutableBufferPointer<Vec3r>.allocate(capacity: 3)
-        //screenCoords.initialize(repeating: Vec2i())
-        ///worldCoords = UnsafeMutableBufferPointer<Vec3r>.allocate(capacity: 3)
-        //worldCoords.initialize(repeating: Vec3r())
+        worldCoords = [Vec3r](repeating: Vec3r(), count: 3)
     }
 
     deinit {
         zbuffer.deallocate()
-        //screenCoords.deallocate()
-        //worldCoords.deallocate()
     }
 
     public func saveScreenshot(to filename: String) throws {
@@ -30,12 +25,9 @@ public class Renderer {
     }
 
     public func render(model: Model) {
-        //let lightDir = Vec3r(x: 0, y: 0, z: -1)
+        let lightDir = Vec3r(x: 0, y: 0, z: -1)
         var c = TGAColour(r: 0, g: 0, b: 0, a: 255)
-        //var screenCoords = [Vec2i](repeating: Vec2i(), count: 3)
-        //var worldCoords = [Vec3r](repeating: Vec3r(), count: 3)
         for i in 0..<model.nfaces {
-            //print("\rface: \(i) of \(model.nfaces)")
             let face = model.face(i)
             let halfWidth = Real(image.width) / 2.0
             let halfHeight = Real(image.height) / 2.0
@@ -47,7 +39,6 @@ public class Renderer {
                 worldCoords[j]  = v0
             }
             // Get a unit vector perpendicular to the triangle.
-            /*
             var n = (worldCoords[2]-worldCoords[0])^(worldCoords[1]-worldCoords[0])
             n.normalise()
             let intensity = n * lightDir
@@ -57,10 +48,6 @@ public class Renderer {
             c.r = lightVal
             c.g = lightVal
             c.b = lightVal
-             */
-            c.r = UInt8.random(in: 0...255)
-            c.g = UInt8.random(in: 0...255)
-            c.b = UInt8.random(in: 0...255)
             drawBarycentricTriangle(screenCoords, c)
         }
     }
@@ -105,7 +92,6 @@ public class Renderer {
         }
     }
 
-    // This, absent anything else, is a lot slower than the other function.
     public func drawBarycentricTriangle(_ pts: [Vec3r], _ colour: TGAColour) {
         var bboxmin = Vec2r(x: Real.greatestFiniteMagnitude, y: Real.greatestFiniteMagnitude)
         var bboxmax = Vec2r(x: -Real.greatestFiniteMagnitude, y: -Real.greatestFiniteMagnitude)
