@@ -112,10 +112,9 @@ public class Renderer {
         let clamp = Vec2r(x: Real(image.width - 1), y: Real(image.height - 1))
         for i in 0..<3 {
             bboxmin.x = max(0, min(bboxmin.x, pts[i].x))
+            bboxmax.x = min(clamp.x, max(bboxmax.x, pts[i].x))
             bboxmin.y = max(0, min(bboxmin.y, pts[i].y))
-
-            bboxmax.x = max(clamp.x, min(bboxmax.x, pts[i].x))
-            bboxmax.y = max(clamp.y, min(bboxmax.y, pts[i].y))
+            bboxmax.y = min(clamp.y, max(bboxmax.y, pts[i].y))
         }
 
         var p = Vec3r()
