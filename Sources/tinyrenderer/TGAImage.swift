@@ -152,8 +152,8 @@ public struct TGAColour: Sendable {
 
 public struct TGAImage {
     private var bytes: [UInt8] = []
-    public private(set) var width = 0
-    public private(set) var height = 0
+    public private(set) var width = Fixed(0)
+    public private(set) var height = Fixed(0)
     private var bpp = UInt8(0)
 
     public enum Format: UInt8 {
@@ -165,8 +165,8 @@ public struct TGAImage {
     public init() {
     }
 
-    public init(width: Int, height: Int, format: Format) {
-        self.bytes = [UInt8](repeating: 0, count: width * height * Int(format.rawValue))
+    public init(width: Fixed, height: Fixed, format: Format) {
+        self.bytes = [UInt8](repeating: 0, count: Int(width * height * Fixed(format.rawValue)))
         self.width = width
         self.height = height
         self.bpp = format.rawValue
@@ -183,14 +183,14 @@ public struct TGAImage {
             print("Failed to read image header.")
             return false
         }
-        width = Int(header.width)
-        height = Int(header.height)
+        width = Fixed(header.width)
+        height = Fixed(header.height)
         bpp = header.bitsperpixel >> 3
         if width <= 0 || height <= 0 || (bpp != Format.grayscale.rawValue && bpp != Format.rgb.rawValue && bpp != Format.rgba.rawValue) {
             print("Invalid image header.")
             return false
         }
-        let nbytes = width * height * Int(bpp)
+        let nbytes = Int(width * height * Fixed(bpp))
         bytes = [UInt8](repeating: 0, count: nbytes)
         if header.datatypecode == 3 || header.datatypecode == 2 {
             data.copyBytes(to: &bytes, from: bytesRead..<nbytes)
@@ -252,14 +252,14 @@ public struct TGAImage {
         let half = width >> 1
         for i in 0..<half {
             for j in 0..<height {
-                for b in 0..<Int(bpp) {
+                for b in 0..<Fixed(bpp) {
                     // Expression exploded to prevent compiler from exploding.
                     let firstBaseExp = i + j * width
-                    let bppExp = Int(bpp)
+                    let bppExp = Fixed(bpp)
                     let firstIdx = firstBaseExp * bppExp + b
                     let secondBaseExp = width - 1 - i + j * width
                     let secondIdx = secondBaseExp * bppExp + b
-                    bytes.swapAt(firstIdx, secondIdx)
+                    bytes.swapAt(Int(firstIdx), Int(secondIdx))
                 }
             }
         }
@@ -269,63 +269,39 @@ public struct TGAImage {
         let half = height >> 1
         for i in 0..<width {
             for j in 0..<half {
-                for b in 0..<Int(bpp) {
+                for b in 0..<Fixed(bpp) {
                     // Expression exploded to prevent compiler from exploding.
                     let firstBaseExp = i + j * width
-                    let bppExp = Int(bpp)
+                    let bppExp = Fixed(bpp)
                     let firstIdx = firstBaseExp * bppExp + b
                     let secondBaseExp = i + (height - 1 - j) * width
                     let secondIdx = secondBaseExp * bppExp + b
-                    bytes.swapAt(firstIdx, secondIdx)
+                    bytes.swapAt(Int(firstIdx), Int(secondIdx))
                 }
             }
         }
     }
 
-    public func get(x: Int, y: Int) -> TGAColour {
+    public func get(x: Fixed, y: Fixed) -> TGAColour {
         if bytes.count == 0 || x < 0 || y < 0 || x >= width || y >= width {
             return TGAColour()
         }
         var colour = TGAColour(r: 0, g: 0, b: 0, a: 0, bpp: bpp)
-        let i = (x + y * width) * Int(bpp)
-        for j in 0..<Int(bpp) {
-            colour.bgra[j] = bytes[i + j]
+        let i = (x + y * width) * Fixed(bpp)
+        for j in 0..<Fixed(bpp) {
+            colour.bgra[Int(j)] = bytes[Int(i + j)]
         }
         return colour
     }
 
-    public mutating func setHorizUnsafe(x0: Int, x1: Int, y: Int, to colour: UnsafeBufferPointer<UInt8>)
-    {
-        assert(bytes.count != 0)
-        assert(x0 >= 0 && x0 < width)
-        assert(x1 >= 0 && x1 >= x0 && x1 < width)
-        assert(y >= 0 && y < height);
-        assert(bpp == 3) // See comment above loop.
-        let start = (x0 + y * width) * Int(bpp)
-        let end = (x1 + y * width) * Int(bpp)
-        bytes.withUnsafeMutableBufferPointer {
-            // If we know that every colour byte is the same, this is faster:
-            //   ($0.baseAddress! + start).update(repeating: colour[0], count: end - start)
-            // If the buffer format was RGBA, these could be rebound to pointers to UInt32,
-            // and you could do something similar for even more speed.
-            // Not doing that now, as it makes more sense to wait until textures are present,
-            // and we actually output realtime to a display. But worth noting.
-            for i in start...end {
-                $0[i] = colour[0]
-                $0[i + 1] = colour[1]
-                $0[i + 2] = colour[2]
-            }
-        }
-    }
-
     @discardableResult
-    public mutating func set(x: Int, y: Int, to colour: TGAColour) -> Bool {
+    public mutating func set(x: Fixed, y: Fixed, to colour: TGAColour) -> Bool {
         if bytes.count == 0 || x < 0 || y < 0 || x >= width || y >= height {
             return false
         }
-        let i = (x + y * width) * Int(bpp)
-        for j in 0..<Int(bpp) {
-            bytes[i + j] = colour.bgra[j]
+        let i = (x + y * width) * Fixed(bpp)
+        for j in 0..<Fixed(bpp) {
+            bytes[Int(i + j)] = colour.bgra[Int(j)]
         }
         return true
     }

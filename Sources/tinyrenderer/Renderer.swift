@@ -4,9 +4,9 @@ public class Renderer {
     private var screenCoords: [Vec3r]
     private var worldCoords: [Vec3r]
 
-    public init(width: Int, height: Int) {
+    public init(width: Fixed, height: Fixed) {
         image = TGAImage(width: width, height: height, format: .rgb)
-        zbuffer = UnsafeMutableBufferPointer<Real>.allocate(capacity: width * height)
+        zbuffer = UnsafeMutableBufferPointer<Real>.allocate(capacity: Int(width * height))
         zbuffer.initialize(repeating: -Real.greatestFiniteMagnitude)
         screenCoords = [Vec3r](repeating: Vec3r(), count: 3)
         worldCoords = [Vec3r](repeating: Vec3r(), count: 3)
@@ -75,7 +75,7 @@ public class Renderer {
         let dx = x1 - x0
         let dy = y1 - y0
         let derror = abs(dy) * 2
-        var error = 0
+        var error = Fixed(0)
         var y = y0
         for x in x0..<x1 {
             if !steep {
@@ -116,77 +116,16 @@ public class Renderer {
                 }
                 p.z = 0
                 for i in 0..<3 { p.z += Real(pts[i][2]) * bcScreen[i] }
-                let index = Int(p.y) * image.width + Int(p.x)
-                if zbuffer[index] < p.z {
-                    zbuffer[index] = p.z
-                    image.set(x: Int(p.x), y: Int(p.y), to: colour)
+                let index = Fixed(p.y) * image.width + Fixed(p.x)
+                if zbuffer[Int(index)] < p.z {
+                    zbuffer[Int(index)] = p.z
+                    image.set(x: Fixed(p.x), y: Fixed(p.y), to: colour)
                 }
                 p.y += 1.0
             }
             p.x += 1.0
         }
     }
-
-    public func drawTriangle(_ pts: [Vec2i], _ colour: TGAColour) {
-        // Create mutable copies of the input parameters.
-        var v0 = pts[0]
-        var v1 = pts[1]
-        var v2 = pts[2]
-    
-        // Discard degenerate triangles.
-        if v0.y == v1.y && v0.y == v2.y { return }
-
-        // Sort the input paramaters in ascending Y order.
-        if v0.y > v1.y { swap(&v0, &v1) }
-        if v0.y > v2.y { swap(&v0, &v2) }
-        if v1.y > v2.y { swap(&v1, &v2) }
-
-        // As v2 is the highest point, and v0 is the lowest,
-        // this calculates the total height of the triangle.
-        let totalHeight = v2.y - v0.y
-        colour.bgra.withUnsafeBufferPointer {
-            // Scan up the triangle, drawing horizontal bands of colour.
-            for i in 0..<totalHeight {
-                // Most triangles can be split horizontally into two triangles:
-                //         * <-- v2
-                //        /|
-                //       / |
-                //      /  |
-                //     /---* <-- v1
-                //    /  /
-                //   / /
-                //  */       <-- v0
-                // To draw a horizontal band, we need to know both sides of the
-                // line. One will always land on the line v0 to v2. But depending
-                // on where we are up the triangle, the other point will either
-                // be on the line v0 to v1 or v1 to v2.
-                // If secondHalf is false, we need the line v0 to v1, if it is
-                // true then we need the line v1 to v2.
-                let secondHalf = i>v1.y-v0.y || v1.y == v0.y
-                // This is the height of the segment that we're in.
-                let segmentHeight = Real(secondHalf ? v2.y-v1.y : v1.y-v0.y)
-                // The alpha is the how far along v0 to v2 the point on that line is.
-                // 0 and the point is v0. 1 and the point is v2. Anything else,
-                // somewhere in between.
-                let alpha = Real(i) / Real(totalHeight)
-                // The beta is the same idea, but for the other line we're interested
-                // in. (v0 to v1 or v1 to v2.)
-                let beta = Real(i-(secondHalf ? v1.y - v0.y : 0)) / segmentHeight
-                // So now, using alpha and beta calculating the points on either
-                // side of the horizontal line we want to draw is trivial;
-                // we simply scale the line in question against alpha or beta.
-                var a =              v0 + (v2-v0)*alpha
-                var b = secondHalf ? v1 + (v2-v1)*beta : v0 + (v1-v0)*beta
-                // Sort a and b in ascending X order.
-                if a.x > b.x { swap(&a, &b) }
-                // Finally, draw the line.
-                // Note that due to casting a and b into integer vectors,
-                // a.y != v0.y+i.
-                image.setHorizUnsafe(x0: a.x, x1: b.x, y: v0.y + i, to: $0)
-            }
-        }
-    }
-
 }
 
 public enum RendererError : Error {

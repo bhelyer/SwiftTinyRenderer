@@ -1,10 +1,11 @@
+public typealias Fixed = Int32
 public typealias Real = Float
 
 public struct Vec2i : CustomStringConvertible {
-    public var x = 0
-    public var y = 0
+    public var x = Fixed(0)
+    public var y = Fixed(0)
 
-    public subscript(componentIndex: Int) -> Int {
+    public subscript(componentIndex: Int) -> Fixed {
         get {
             assert(componentIndex == 0 || componentIndex == 1, "Vec2: bad index")
             if componentIndex == 0 {
@@ -12,7 +13,7 @@ public struct Vec2i : CustomStringConvertible {
             } else if componentIndex == 1 {
                 return y
             } else {
-                return Int(0)
+                return Fixed(0)
             }
         }
         set(newValue) {
@@ -28,7 +29,7 @@ public struct Vec2i : CustomStringConvertible {
     public init() {
     }
 
-    public init(x: Int, y: Int) {
+    public init(x: Fixed, y: Fixed) {
         self.x = x
         self.y = y
     }
@@ -42,7 +43,7 @@ public struct Vec2i : CustomStringConvertible {
     }
 
     public static func *(left: Vec2i, right: Real) -> Vec2i {
-        return Vec2i(x: Int(Real(left.x) * right), y: Int(Real(left.y) * right))
+        return Vec2i(x: Fixed(Real(left.x) * right), y: Fixed(Real(left.y) * right))
     }
 
     public var description: String {
