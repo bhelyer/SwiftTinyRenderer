@@ -7,10 +7,10 @@ func barycentric(_ a: Vec3r, _ b: Vec3r, _ c: Vec3r, _ p: Vec3r) -> Vec3r {
     s0.x = c.x - a.x
     s0.y = b.x - a.x
     s0.z = a.x - p.x
-    let u = s0 ^ s1
+    let u = cross(s0, s1)
     if abs(u.z) > 1e-2 {
-        return Vec3r(x: 1.0 - (u.x + u.y) / u.z, y: u.y / u.z, z: u.x / u.z)
+        return Vec3r(1.0 - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z)
     } else {
-        return Vec3r(x: -1, y: 1, z: 1)
+        return Vec3r(-1, 1, 1)
     }
 }

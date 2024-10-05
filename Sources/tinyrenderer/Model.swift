@@ -71,7 +71,7 @@ private func parseVert(line: Substring) -> Vec3r {
             return Vec3r()
         }
     }
-    return Vec3r(x: verts[0]!, y: verts[1]!, z: verts[2]!)
+    return Vec3r(verts[0]!, verts[1]!, verts[2]!)
 }
 
 private func parseFace(line: Substring) -> [Int] {

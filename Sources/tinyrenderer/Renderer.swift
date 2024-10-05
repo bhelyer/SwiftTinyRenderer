@@ -25,7 +25,7 @@ public class Renderer {
     }
 
     public func render(model: Model) {
-        let lightDir = Vec3r(x: 0, y: 0, z: -1)
+        let lightDir = Vec3r(0, 0, -1)
         var c = TGAColour(r: 0, g: 0, b: 0, a: 255)
         for i in 0..<model.nfaces {
             let face = model.face(i)
@@ -35,13 +35,13 @@ public class Renderer {
                 let v0 = model.vert(face[j])
                 let x0 = Int((v0.x + 1.0) * halfWidth + 0.5)
                 let y0 = Int((v0.y + 1.0) * halfHeight + 0.5)
-                screenCoords[j] = Vec3r(x: Real(x0), y: Real(y0), z: v0.z)
+                screenCoords[j] = Vec3r(Real(x0), Real(y0), v0.z)
                 worldCoords[j]  = v0
             }
             // Get a unit vector perpendicular to the triangle.
-            var n = (worldCoords[2]-worldCoords[0])^(worldCoords[1]-worldCoords[0])
+            var n = cross((worldCoords[2] - worldCoords[0]), (worldCoords[1] - worldCoords[0]))
             n.normalise()
-            let intensity = n * lightDir
+            let intensity = dot(n, lightDir)
             if intensity < 0.0 { continue }
 
             let lightVal = UInt8(255 * intensity)
@@ -93,9 +93,9 @@ public class Renderer {
     }
 
     public func drawBarycentricTriangle(_ pts: [Vec3r], _ colour: TGAColour) {
-        var bboxmin = Vec2r(x: Real.greatestFiniteMagnitude, y: Real.greatestFiniteMagnitude)
-        var bboxmax = Vec2r(x: -Real.greatestFiniteMagnitude, y: -Real.greatestFiniteMagnitude)
-        let clamp = Vec2r(x: Real(image.width - 1), y: Real(image.height - 1))
+        var bboxmin = Vec2r(Real.greatestFiniteMagnitude, Real.greatestFiniteMagnitude)
+        var bboxmax = Vec2r(-Real.greatestFiniteMagnitude, -Real.greatestFiniteMagnitude)
+        let clamp = Vec2r(Real(image.width - 1), Real(image.height - 1))
         for i in 0..<3 {
             bboxmin.x = max(0, min(bboxmin.x, pts[i].x))
             bboxmax.x = min(clamp.x, max(bboxmax.x, pts[i].x))
