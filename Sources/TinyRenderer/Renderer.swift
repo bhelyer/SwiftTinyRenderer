@@ -1,5 +1,6 @@
 public class Renderer {
     private var image: TGAImage
+    private var texture: TGAImage?
     private var zbuffer: UnsafeMutableBufferPointer<Real>
     private var screenCoords: [Vec3r]
     private var worldCoords: [Vec3r]
@@ -21,6 +22,13 @@ public class Renderer {
         snapshot.flipVertically()
         if !snapshot.write(fileTo: filename, vflip: false, rle: true) {
             throw RendererError.saveFailed
+        }
+    }
+    
+    public func loadTexture(from filename: String) throws {
+        texture = TGAImage()
+        if !texture!.read(fromFile: filename) {
+            throw RendererError.loadFailed
         }
     }
 
@@ -130,4 +138,5 @@ public class Renderer {
 
 public enum RendererError : Error {
     case saveFailed
+    case loadFailed
 }

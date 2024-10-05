@@ -7,6 +7,5 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "TinyRenderer"),
-        //.testTarget(name: "TinyRendererTests", dependencies: ["TinyRenderer"])
     ]
 )
