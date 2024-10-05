@@ -32,7 +32,7 @@ public class Renderer {
             let halfWidth = Real(image.width) / 2.0
             let halfHeight = Real(image.height) / 2.0
             for j in 0..<3 {
-                let v0 = model.vert(face[j])
+                let v0 = model.vert(face.vertIndices[j])
                 let x0 = Int((v0.x + 1.0) * halfWidth + 0.5)
                 let y0 = Int((v0.y + 1.0) * halfHeight + 0.5)
                 screenCoords[j] = Vec3r(Real(x0), Real(y0), v0.z)

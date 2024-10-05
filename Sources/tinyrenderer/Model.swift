@@ -5,12 +5,24 @@ private let facePrefix = "f "
 
 /// An exceedingly simple WaveFront OBJ 3D model parser.
 public struct Model {
+    public struct Face {
+        public let vertIndices: [Int]
+        
+        public init() {
+            self.vertIndices = []
+        }
+        
+        public init(vertIndices: [Int]) {
+            self.vertIndices = vertIndices
+        }
+    }
+    
     private let verts: [Vec3r]
-    private let faces: [[Int]]
+    private let faces: [Face]
 
     public init(fromFile filename: String) {
         var verts: [Vec3r] = []
-        var faces: [[Int]] = []
+        var faces: [Face] = []
 
         var modelText: String
         do {
@@ -47,7 +59,7 @@ public struct Model {
         return verts[i]
     }
 
-    public func face(_ i: Int) -> [Int] {
+    public func face(_ i: Int) -> Face {
         return faces[i]
     }
 }
@@ -74,29 +86,29 @@ private func parseVert(line: Substring) -> Vec3r {
     return Vec3r(verts[0]!, verts[1]!, verts[2]!)
 }
 
-private func parseFace(line: Substring) -> [Int] {
+private func parseFace(line: Substring) -> Model.Face {
     if line.count <= facePrefix.count {
         print("Invalid face line given to parseFace.")
-        return []
+        return Model.Face()
     }
     let startIndex = line.index(line.startIndex, offsetBy: facePrefix.count)
     let faceStr = line[startIndex..<line.endIndex]
     let faceGroups = faceStr.split { $0 == " " }
     if faceGroups.count == 0 {
-        return []
+        return Model.Face()
     }
     var faces: [Int] = []
     // Given "f 1/2/3 4/5/6 7/8/9", create an array [1-1, 4-1, 7-1].
     for faceGroup in faceGroups {
         let faceStrs = faceGroup.split { $0 == "/" }
         if faceStrs.count == 0 {
-            return []
+            return Model.Face()
         }
         guard let faceIndex = Int(faceStrs[0]) else {
-            return []
+            return Model.Face()
         }
         // In OBJ files, the first index is 1, not 0.
         faces.append(faceIndex - 1)
     }
-    return faces
+    return Model.Face(vertIndices: faces)
 }
