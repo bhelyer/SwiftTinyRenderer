@@ -122,7 +122,7 @@ public struct Matrix: CustomStringConvertible {
             for j in 0..<cols {
                 result += "\(self[i, j])"
                 if j < cols - 1 {
-                    result += "\t"
+                    result += " "
                 }
             }
             result += "\n"

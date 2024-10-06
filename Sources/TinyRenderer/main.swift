@@ -34,7 +34,7 @@ if benchmark {
 
 // Actually do the rendering.
 let model = Model(fromFile: modelFilename)
-var renderer = Renderer(width: 800, height: 800)
+var renderer = Renderer(width: 800, height: 800, depth: 255)
 if !textureFilename.isEmpty {
     do {
         print("Loading texture '\(textureFilename)'.")

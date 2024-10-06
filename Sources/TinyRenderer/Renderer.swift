@@ -5,14 +5,17 @@ public class Renderer {
     private var screenCoords: [Vec3r]
     private var worldCoords: [Vec3r]
     private var texCoords: [Vec2r]
+    private let depth: Fixed
+    private var camera: Vec3r = Vec3r(0, 0, 3)
 
-    public init(width: Fixed, height: Fixed) {
+    public init(width: Fixed, height: Fixed, depth: Fixed) {
         image = TGAImage(width: width, height: height, format: .rgb)
         zbuffer = UnsafeMutableBufferPointer<Real>.allocate(capacity: Int(width * height))
         zbuffer.initialize(repeating: -Real.greatestFiniteMagnitude)
         screenCoords = [Vec3r](repeating: Vec3r(), count: 3)
         worldCoords = [Vec3r](repeating: Vec3r(), count: 3)
         texCoords = [Vec2r](repeating: Vec2r(), count: 3)
+        self.depth = depth
     }
 
     deinit {
@@ -35,17 +38,17 @@ public class Renderer {
     }
 
     public func render(model: Model) {
+        var projection = Matrix.identity(dimensions: 4)
+        let viewPort = viewport(image.width / 8, image.height / 8, image.width * 3 / 4, image.height * 3 / 4)
+        projection[3, 2] = Real(-1) / camera.z
+        
         let lightDir = Vec3r(0, 0, -1)
         var c = TGAColour(r: 0, g: 0, b: 0, a: 255)
         for i in 0..<model.nfaces {
             let face = model.face(i)
-            let halfWidth = Real(image.width) / 2.0
-            let halfHeight = Real(image.height) / 2.0
             for j in 0..<3 {
                 let v0 = model.vert(face.vertIndices[j])
-                let x0 = Int((v0.x + 1.0) * halfWidth + 0.5)
-                let y0 = Int((v0.y + 1.0) * halfHeight + 0.5)
-                screenCoords[j] = Vec3r(Real(x0), Real(y0), v0.z)
+                screenCoords[j] = m2v(viewPort * projection * v2m(v0))
                 worldCoords[j]  = v0
                 
                 if let texture {
@@ -190,7 +193,6 @@ public class Renderer {
                     c.g = UInt8(Real(c.g) * intensity)
                     c.b = UInt8(Real(c.b) * intensity)
                     
-                    
                     image.set(x: Fixed(p.x), y: Fixed(p.y), to: c)
                 }
                 p.y += 1.0
@@ -198,6 +200,31 @@ public class Renderer {
             p.x += 1.0
         }
     }
+    
+    func viewport(_ x: Fixed, _ y: Fixed, _ w: Fixed, _ h: Fixed) -> Matrix {
+        var m = Matrix.identity(dimensions: 4)
+        m[0, 3] = Real(x) + Real(w) / Real(2)
+        m[1, 3] = Real(y) + Real(h) / Real(2)
+        m[2, 3] = Real(depth) / Real(2)
+        
+        m[0, 0] = Real(w) / Real(2)
+        m[1, 1] = Real(h) / Real(2)
+        m[2, 2] = Real(depth) / Real(2)
+        return m
+    }
+}
+
+func m2v(_ m: Matrix) -> Vec3r {
+    return Vec3r(m[0, 0] / m[3, 0], m[1, 0] / m[3, 0], m[2, 0] / m[3, 0])
+}
+
+func v2m(_ v: Vec3r) -> Matrix {
+    var m = Matrix(4, 1)
+    m[0, 0] = v.x
+    m[1, 0] = v.y
+    m[2, 0] = v.z
+    m[3, 0] = 1
+    return m
 }
 
 public enum RendererError : Error {
