@@ -4,6 +4,7 @@ public class Renderer {
     private var zbuffer: UnsafeMutableBufferPointer<Real>
     private var screenCoords: [Vec3r]
     private var worldCoords: [Vec3r]
+    private var texCoords: [Vec2r]
 
     public init(width: Fixed, height: Fixed) {
         image = TGAImage(width: width, height: height, format: .rgb)
@@ -11,6 +12,7 @@ public class Renderer {
         zbuffer.initialize(repeating: -Real.greatestFiniteMagnitude)
         screenCoords = [Vec3r](repeating: Vec3r(), count: 3)
         worldCoords = [Vec3r](repeating: Vec3r(), count: 3)
+        texCoords = [Vec2r](repeating: Vec2r(), count: 3)
     }
 
     deinit {
@@ -45,6 +47,15 @@ public class Renderer {
                 let y0 = Int((v0.y + 1.0) * halfHeight + 0.5)
                 screenCoords[j] = Vec3r(Real(x0), Real(y0), v0.z)
                 worldCoords[j]  = v0
+                
+                if let texture {
+                    let tv0 = model.texVert(face.texVertIndices[j])
+                    let tx0 = Real(texture.width) * tv0.x
+                    // Our Y goes from bottom to top, textures are reversed.
+                    // 1.0 - tv0.y inverts 1 to 0 and 0 to 1.
+                    let ty0 = Real(texture.height) * (Real(1.0) - tv0.y)
+                    texCoords[j] = Vec2r(tx0, ty0)
+                }
             }
             // Get a unit vector perpendicular to the triangle.
             var n = cross((worldCoords[2] - worldCoords[0]), (worldCoords[1] - worldCoords[0]))
@@ -52,11 +63,16 @@ public class Renderer {
             let intensity = dot(n, lightDir)
             if intensity < 0.0 { continue }
 
-            let lightVal = UInt8(255 * intensity)
-            c.r = lightVal
-            c.g = lightVal
-            c.b = lightVal
-            drawBarycentricTriangle(screenCoords, c)
+            if texture != nil {
+                drawTexturedBarycentricTriangle(screenCoords, texCoords, intensity)
+            } else {
+                let lightVal = UInt8(255 * intensity)
+                c.r = lightVal
+                c.g = lightVal
+                c.b = lightVal
+                drawBarycentricTriangle(screenCoords, c)
+            }
+            
         }
     }
 
@@ -128,6 +144,54 @@ public class Renderer {
                 if zbuffer[Int(index)] < p.z {
                     zbuffer[Int(index)] = p.z
                     image.set(x: Fixed(p.x), y: Fixed(p.y), to: colour)
+                }
+                p.y += 1.0
+            }
+            p.x += 1.0
+        }
+    }
+    
+    public func drawTexturedBarycentricTriangle(_ pts: [Vec3r], _ texs: [Vec2r], _ intensity: Real) {
+        guard let texture = texture else {
+            print("Called drawTexturedBarycentricTriangle with nil texture.")
+            return
+        }
+        var bboxmin = Vec2r(Real.greatestFiniteMagnitude, Real.greatestFiniteMagnitude)
+        var bboxmax = Vec2r(-Real.greatestFiniteMagnitude, -Real.greatestFiniteMagnitude)
+        let clamp = Vec2r(Real(image.width - 1), Real(image.height - 1))
+        for i in 0..<3 {
+            bboxmin.x = max(0, min(bboxmin.x, pts[i].x))
+            bboxmax.x = min(clamp.x, max(bboxmax.x, pts[i].x))
+            bboxmin.y = max(0, min(bboxmin.y, pts[i].y))
+            bboxmax.y = min(clamp.y, max(bboxmax.y, pts[i].y))
+        }
+        
+        var p = Vec3r()
+        p.x = bboxmin.x
+        while p.x <= bboxmax.x {
+            //for y in bboxmin.y...bboxmax.y {
+            p.y = bboxmin.y
+            while p.y <= bboxmax.y {
+                let bcScreen = barycentric(pts[0], pts[1], pts[2], p)
+                if bcScreen.x < 0 || bcScreen.y < 0 || bcScreen.z < 0 {
+                    p.y += 1.0
+                    continue
+                }
+                p.z = 0
+                for i in 0..<3 { p.z += Real(pts[i][2]) * bcScreen[i] }
+                let index = Fixed(p.y) * image.width + Fixed(p.x)
+                if zbuffer[Int(index)] < p.z {
+                    zbuffer[Int(index)] = p.z
+                    
+                    let tx = texs[0][0] * bcScreen.x + texs[1][0] * bcScreen.y + texs[2][0] * bcScreen.z
+                    let ty = texs[0][1] * bcScreen.x + texs[1][1] * bcScreen.y + texs[2][1] * bcScreen.z
+                    var c = texture.get(x: Fixed(tx), y: Fixed(ty))
+                    c.r = UInt8(Real(c.r) * intensity)
+                    c.g = UInt8(Real(c.g) * intensity)
+                    c.b = UInt8(Real(c.b) * intensity)
+                    
+                    
+                    image.set(x: Fixed(p.x), y: Fixed(p.y), to: c)
                 }
                 p.y += 1.0
             }

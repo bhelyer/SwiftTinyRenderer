@@ -51,6 +51,10 @@ public struct Vec2<T: Numeric>: CustomStringConvertible {
     }
 }
 
+public func *(left: Vec2r, right: Real) -> Vec2r {
+    return Vec2r(left.x * right, left.y * right)
+}
+
 public struct Vec3<T: FloatingPoint>: CustomStringConvertible {
     public var x: T
     public var y: T

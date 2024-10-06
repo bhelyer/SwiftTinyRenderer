@@ -60,6 +60,10 @@ public struct Model {
     public var nverts: Int {
         return verts.count
     }
+    
+    public var nTexVerts: Int {
+        return texVerts.count
+    }
 
     public var nfaces: Int {
         return faces.count
@@ -67,6 +71,10 @@ public struct Model {
 
     public func vert(_ i: Int) -> Vec3r {
         return verts[i]
+    }
+    
+    public func texVert(_ i: Int) -> Vec3r {
+        return texVerts[i]
     }
 
     public func face(_ i: Int) -> Face {
